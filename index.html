@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://api.openai.com https://generativelanguage.googleapis.com https://api.groq.com;"
+    />
+    <title>رعد — مساعد شخصي</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark"><span></span></div>
+          <div><div class="brand-name">رعد<span>.</span></div><div class="brand-caption">المساعد الصوتي</div></div>
+        </div>
+        <button class="new-chat-button" id="new-chat"><span>＋</span> دردشة جديدة</button>
+        <div class="sidebar-label">المساعد</div>
+        <nav class="main-nav" aria-label="Main menu">
+          <button class="side-action active" data-view="chat"><span>◉</span> المحادثة</button>
+          <button class="side-action" data-view="voice"><span>♬</span> الدردشة الصوتية</button>
+          <button class="side-action" data-view="tasks"><span>✓</span> المهام والتذكيرات</button>
+          <button class="side-action" data-view="notes"><span>▤</span> الملاحظات</button>
+          <button class="side-action" data-view="tools"><span>⌕</span> البحث والأدوات</button>
+          <button class="side-action" data-view="workspace"><span>⌘</span> ملفات المشروع</button>
+        </nav>
+        <div class="sidebar-label">المساحة</div>
+        <button class="workspace-card" id="workspace-shortcut">
+          <span class="workspace-icon">⌂</span>
+          <span class="workspace-copy"><strong id="workspace-name">لا توجد مجلدات محددة</strong><small>اختر مجلد مشروع</small></span>
+          <span class="chevron">‹</span>
+        </button>
+        <div class="sidebar-spacer"></div>
+        <div class="privacy-card">
+          <span class="privacy-dot"></span>
+          <div><strong>خصوصيتك مهمة</strong><p>تظل بياناتك محلية. يتم إرسال الرسائل فقط عند اختيارك.</p></div>
+        </div>
+        <button class="settings-button" id="open-settings"><span>⚙</span> إعدادات الذكاء</button>
+        <div class="sidebar-footer">رعد <span>v0.2</span></div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div class="system-status"><span class="status-pulse"></span><span id="status-label">النظام جاهز</span></div>
+          <div class="topbar-right"><span class="mode-label" id="network-status">Internet: checking…</span><span class="mode-label" id="provider-badge">Offline</span><button class="secondary-button" id="wake-toggle" type="button" hidden>Stop listening</button></div>
+        </header>
+
+        <section class="view-panel active" id="view-chat" data-view-section="chat">
+          <div class="page-heading"><span class="eyebrow">المساعد الشخصي</span><h1>مرحباً، أنا <span>رعد</span></h1><p>اسأل، خطط، اكتب أو اطلب المساعدة — بالعربية أو الإنجليزية.</p></div>
+          <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
+          <div class="chat-empty" id="chat-empty"><span class="empty-orb">ر</span><strong>كيف يمكنني مساعدتك؟</strong><p>ابدأ محادثة أو اختر مهمة من القائمة.</p><div class="suggestion-row"><button class="suggestion" data-prompt="ساعدني أرتب مهامي لليوم">خططي ليومك</button><button class="suggestion" data-prompt="اكتب لي خطة بسيطة لمشروعي">خطة المشروع</button><button class="suggestion" data-prompt="اشرح لي موضوعًا أختاره">شرح موضوع</button></div></div>
+          <form class="composer-area" id="chat-form">
+            <div class="composer"><textarea id="chat-input" rows="1" maxlength="12000" placeholder="اكتب رسالتك إلى رعد..." aria-label="رسالتك"></textarea><button class="send-button" id="send-chat" type="submit" aria-label="إرسال">↑</button></div>
+            <div class="composer-footnote">راجع التفاصيل المهمة. <span>•</span> يتم إرسال رسالتك إلى مزود الذكاء المختار.</div>
+          </form>
+        </section>
+
+        <section class="view-panel" id="view-voice" data-view-section="voice" hidden>
+          <div class="voice-view">
+            <div class="hud-panel">
+              <div class="hud-pill hud-status-pill">
+                <span class="status-dot"></span>
+                <span id="hud-status">النظام جاهز</span>
+              </div>
+              <button class="hud-pill voice-test-button" id="voice-test" type="button">Test voice</button>
+              <button class="hud-pill hud-button" id="language-toggle" type="button" aria-label="لغة المحادثة: الإنجليزية" disabled>EN</button>
+              <button class="hud-pill hud-button" id="floating-settings" type="button" aria-label="إعدادات صوت المساعد الصوتي">⚙</button>
+            </div>
+
+            <div class="zero-hostile" aria-label="واجهة مساعد صوتي">
+              <svg viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Red voice assistant interface">
+                <rect width="680" height="380" fill="#0a0204"/>
+                <g stroke="#1c0608" stroke-width="0.5"><line x1="0" y1="95" x2="680" y2="95"/><line x1="0" y1="190" x2="680" y2="190"/><line x1="0" y1="285" x2="680" y2="285"/><line x1="170" y1="0" x2="170" y2="380"/><line x1="340" y1="0" x2="340" y2="380"/><line x1="510" y1="0" x2="510" y2="380"/></g>
+                <line x1="30" y1="42" x2="650" y2="42" stroke="#6e0b12" stroke-width="1"/>
+                <rect x="30" y="38" width="60" height="4" fill="#c1121f"/>
+                <text x="30" y="30" font-family="monospace" font-size="12" fill="#e5383b" letter-spacing="3">RAAD // VOICE ASSISTANT</text>
+                <text class="fl" x="650" y="30" text-anchor="end" font-family="monospace" font-size="12" fill="#c1121f" letter-spacing="2">READY TO HELP</text>
+                <g transform="translate(-40 0)">
+                  <g class="sp"><circle cx="340" cy="190" r="140" fill="none" stroke="#5c0a10" stroke-width="6" stroke-dasharray="1.5 7"/></g>
+                  <circle cx="340" cy="190" r="128" fill="none" stroke="#3d070b" stroke-width="1"/>
+                  <g class="sr"><path d="M400 86.1 A120 120 0 0 1 443.9 250" fill="none" stroke="#b3121d" stroke-width="6"/><path d="M236.1 250 A120 120 0 0 1 280 86.1" fill="none" stroke="#b3121d" stroke-width="6"/></g>
+                  <g class="sp"><circle cx="340" cy="190" r="104" fill="none" stroke="#7a0c14" stroke-width="1" stroke-dasharray="3 5"/></g>
+                  <path d="M255.4 159.2 A90 90 0 0 1 424.6 159.2" fill="none" stroke="#e01e2b" stroke-width="4"/>
+                  <path d="M424.6 220.8 A90 90 0 0 1 255.4 220.8" fill="none" stroke="#6b0a0a" stroke-width="4"/>
+                  <circle cx="340" cy="190" r="74" fill="#1a0306" stroke="#c1121f" stroke-width="1.5"/>
+                  <path d="M312 163 Q340 142 368 163 Q340 184 312 163Z" fill="#2b0508" stroke="#e01e2b" stroke-width="1.5"/>
+                  <circle cx="340" cy="163" r="9" fill="#c1121f"/>
+                  <ellipse cx="340" cy="163" rx="2.5" ry="8" fill="#000"/>
+                  <text class="fl" x="340" y="208" text-anchor="middle" font-family="monospace" font-size="36" font-weight="500" fill="#e01e2b" letter-spacing="8">RAAD</text>
+                  <text x="344" y="228" text-anchor="middle" font-family="monospace" font-size="11" fill="#a4161a" letter-spacing="3">READY TO LISTEN</text>
+                </g>
+                <path d="M470 56 L480 56 L480 62 M650 56 L640 56 L640 62 M470 252 L480 252 L480 246 M650 252 L640 252 L640 246" fill="none" stroke="#b3121d" stroke-width="1"/>
+                <text x="480" y="80" font-family="monospace" font-size="11" fill="#e5383b" letter-spacing="2">TARGET SCAN</text>
+                <circle cx="550" cy="147" r="48" fill="none" stroke="#4a090e" stroke-width="1"/>
+                <circle cx="550" cy="147" r="32" fill="none" stroke="#4a090e" stroke-width="1"/>
+                <circle cx="550" cy="147" r="16" fill="none" stroke="#4a090e" stroke-width="1"/>
+                <line x1="502" y1="147" x2="598" y2="147" stroke="#4a090e" stroke-width="1"/>
+                <line x1="550" y1="99" x2="550" y2="195" stroke="#4a090e" stroke-width="1"/>
+                <g class="sw"><line x1="550" y1="147" x2="550" y2="99" stroke="#ff2a2a" stroke-width="2"/></g>
+                <circle class="bk" cx="572" cy="128" r="4" fill="#ff2a2a"/>
+                <circle cx="527" cy="165" r="3" fill="#b3121d"/>
+                <circle cx="560" cy="172" r="2" fill="#b3121d"/>
+                <g font-family="monospace" font-size="11" fill="#d9777c"><text x="480" y="222">VOICE  READY</text><text x="480" y="240">TAP MIC TO SPEAK</text></g>
+                <circle class="bk" cx="640" cy="218" r="3" fill="#ff2a2a"/><circle class="bk" cx="640" cy="236" r="3" fill="#ff2a2a"/>
+                <polyline id="hostile-wave" points="" fill="none" stroke="#c1121f" stroke-width="1.5" stroke-linejoin="round"/>
+                <line x1="30" y1="365" x2="650" y2="365" stroke="#4a090e" stroke-width="1"/>
+                <text id="hostile-text" x="340" y="358" text-anchor="middle" font-family="monospace" font-size="12" fill="#e5383b" letter-spacing="3"></text>
+              </svg>
+            </div>
+
+            <div class="eyebrow" id="voice-state"><span></span><span id="state-label">النظام جاهز</span></div>
+            <h1>تحدث إلى <span>رعد</span></h1>
+            <p class="welcome-copy">Click the red microphone, speak English, then click it again to send.</p>
+            <div class="orb-wrap" id="orb-wrap"><div class="orb-ring ring-one"></div><div class="orb-ring ring-two"></div><div class="orb-ring ring-three"></div>
+              <button class="orb-core" id="voice-toggle" aria-label="ابدأ الدردشة الصوتية" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"></path><path d="M19 11a7 7 0 0 1-14 0M12 18v4m-4 0h8"></path></svg>
+              </button>
+            </div>
+            <div class="voice-caption" id="voice-caption">Click the red microphone to talk to Raad</div>
+            <div class="voice-transcript" id="voice-transcript" hidden></div>
+            <div class="voice-response" id="voice-response" hidden></div>
+            <p class="privacy-hint"><span>◇</span> يتم إرسال الصوت إلى مزود الذكاء المختار فقط بعد موافقتك عليه.</p>
+          </div>
+        </section>
+
+        <section class="view-panel content-view" id="view-tasks" data-view-section="tasks" hidden>
+          <div class="page-heading"><span class="eyebrow">خطط يومك</span><h1>المهام والتذكيرات</h1><p>مهامك محفوظة على هذا الجهاز. التذكير يظهر كإشعار عند موعده.</p></div>
+          <form class="inline-form task-form" id="task-form">
+            <input id="task-title" maxlength="200" placeholder="اكتب مهمة جديدة..." required aria-label="عنوان المهمة" />
+            <input id="task-due" type="datetime-local" aria-label="موعد التذكير (اختياري)" />
+            <button type="submit" class="primary-button">إضافة مهمة</button>
+            <textarea id="task-details" maxlength="4000" placeholder="تفاصيل اختيارية"></textarea>
+          </form>
+          <div class="list-toolbar"><strong>قائمة مهامك</strong><span id="task-count"></span></div>
+          <div class="item-list" id="task-list"></div>
+          <div class="empty-state" id="tasks-empty" hidden>مافيش مهام لسه — أضف أول مهمة من فوق.</div>
+        </section>
+
+        <section class="view-panel content-view" id="view-notes" data-view-section="notes" hidden>
+          <div class="page-heading"><span class="eyebrow">مساحة أفكارك</span><h1>ملاحظاتك</h1><p>أنشئ ملاحظاتك واحفظها محليًا على جهازك.</p></div>
+          <div class="notes-layout">
+            <div class="notes-list-pane"><button class="primary-button" id="new-note">＋ ملاحظة جديدة</button><div class="item-list" id="notes-list"></div><div class="empty-state" id="notes-empty" hidden>ملاحظاتك هتظهر هنا.</div></div>
+            <form class="note-editor" id="note-form"><input id="note-title" maxlength="200" placeholder="عنوان الملاحظة" required aria-label="عنوان الملاحظة" /><textarea id="note-content" maxlength="100000" placeholder="اكتب فكرتك هنا..." aria-label="محتوى الملاحظة"></textarea><div class="editor-actions"><span id="note-save-status">محفوظة على جهازك فقط</span><button type="button" class="cancel-button" id="delete-note" disabled>حذف</button><button type="submit" class="primary-button">حفظ الملاحظة</button></div></form>
+          </div>
+        </section>
+
+        <section class="view-panel content-view" id="view-tools" data-view-section="tools" hidden>
+          <div class="page-heading"><span class="eyebrow">إنجاز أسرع</span><h1>البحث والأدوات</h1><p>إجراءات محددة وواضحة، ولن يُنفذ أي إجراء على جهازك دون تأكيد.</p></div>
+          <div class="tool-grid">
+            <form class="tool-card" id="web-search-form"><span class="tool-symbol">⌕</span><h2>بحث على الإنترنت</h2><p>افتح نتائج بحث Google في المتصفح بعد التأكيد.</p><label for="web-query">عبارة البحث</label><input id="web-query" maxlength="500" placeholder="مثال: تعلم JavaScript للمبتدئين" required /><button class="primary-button" type="submit">ابحث على الويب</button></form>
+            <div class="tool-card"><span class="tool-symbol">▣</span><h2>تطبيقات ويندوز</h2><p>افتح تطبيقًا مسموحًا بعد نافذة التأكيد.</p><div class="button-row"><button class="secondary-button" data-open-app="notepad">فتح المفكرة</button><button class="secondary-button" data-open-app="calculator">فتح الآلة الحاسبة</button></div></div>
+          </div>
+        </section>
+
+        <section class="view-panel content-view" id="view-workspace" data-view-section="workspace" hidden>
+          <div class="page-heading"><span class="eyebrow">ملفاتك ومشاريعك</span><h1>مساحة العمل</h1><p>اختار مجلدًا، ثم أنشئ ملفًا جديدًا في جذره. زيرو لا يقرأ ملفاتك تلقائيًا ولا يستبدل ملفًا موجودًا.</p></div>
+          <div class="workspace-panel"><div class="workspace-summary"><span class="workspace-icon large">⌂</span><div><strong id="workspace-current">لم يتم اختيار مجلد</strong><p id="workspace-path">اختيار المجلد لا يمنح زيرو إذن قراءة الملفات.</p></div><button class="secondary-button" id="choose-workspace">اختيار مجلد</button></div>
+            <form class="file-form" id="file-form"><label for="file-name">اسم الملف</label><input id="file-name" maxlength="120" placeholder="مثال: notes.txt" required /><label for="file-content">المحتوى</label><textarea id="file-content" maxlength="1000000" placeholder="اكتب محتوى الملف الجديد..." required></textarea><button class="primary-button" type="submit">إنشاء الملف</button></form>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="settings-modal" hidden>
+      <form class="modal-card settings-card" id="settings-form">
+        <div class="modal-heading"><div><span class="modal-kicker">اختر مزودك</span><h2>إعدادات رعد</h2></div><button type="button" class="modal-close" id="close-settings" aria-label="إغلاق">×</button></div>
+        <p class="settings-intro">اختر Groq أو Gemini أو OpenAI وأدخل مفتاح API. يُحفظ المفتاح مشفرًا إذا فعّلت الحفظ الآمن. قد تفرض الخدمات حدود استخدام أو رسومًا حسب خطتك.</p>
+        <label for="provider">المزود</label><select id="provider"><option value="groq" selected>Groq (خيار مجاني بحدود الاستخدام)</option><option value="gemini">Google Gemini</option><option value="openai">OpenAI</option></select>
+        <label for="api-key">API key</label><input id="api-key" type="password" autocomplete="off" placeholder="ألصق مفتاحك هنا — لا يُحفظ على القرص" required />
+        <label class="setting-toggle"><input id="remember-key" type="checkbox" checked /><span><strong>حفظ مفتاح API بشكل آمن</strong><small>يُخزن بحماية Windows حتى يفتح رعد بعد إعادة التشغيل.</small></span></label>
+        <label for="voice-language">Voice recognition language</label><select id="voice-language" disabled><option value="en-US">English</option></select>
+        <div class="settings-divider"></div>
+        <label class="setting-toggle"><input id="auto-start" type="checkbox" checked /><span><strong>تشغيل رعد عند بدء Windows</strong><small>يفتح نافذة التطبيق العادية دون استبدال سطح المكتب.</small></span></label>
+        <label class="setting-toggle"><input id="always-listen" type="checkbox" /><span><strong>Listen for wake word locally</strong><small>Optional. Requires local speech recognition support; use the red microphone for a voice conversation.</small></span></label>
+        <label class="setting-toggle"><input id="auto-speak" type="checkbox" checked /><span><strong>قراءة الردود بصوت عالٍ</strong><small>سيقرأ رعد كل رد تلقائيًا.</small></span></label>
+        <label for="wake-phrase">كلمة التنبيه</label><input id="wake-phrase" maxlength="60" value="رعد" required />
+        <p class="modal-note">بعد كلمة التنبيه، يرسل رعد صوتك إلى المزود المختار. يمكنك إيقاف الميكروفون من زر الاستماع في الأعلى.</p>
+        <p class="modal-note" id="ai-status">لا يوجد مزود متصل بعد.</p>
+        <p class="modal-note">Groq يستخدم حدًا مجانيًا محدودًا للحسابات المؤهلة؛ نطق الرد يتم بصوت Windows على جهازك.</p>
+        <div class="modal-actions"><button type="button" class="cancel-button" id="cancel-settings">إلغاء</button><button type="submit" class="primary-button">تحقق واحفظ</button></div>
+      </form>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./renderer.js"></script>
+  </body>
+</html>
